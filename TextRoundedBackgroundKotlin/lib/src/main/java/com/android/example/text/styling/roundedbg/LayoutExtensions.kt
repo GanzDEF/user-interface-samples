@@ -47,12 +47,12 @@ fun Layout.getLineBottomWithoutSpacing(line: Int): Int {
     if (!hasLineSpacing || isLastLine && lastLineSpacingNotAdded) {
         lineBottomWithoutSpacing = lineBottom
     } else {
-        val extra: Float
-        if (lineSpacingMultiplier.compareTo(DEFAULT_LINESPACING_MULTIPLIER) != 0) {
-            val lineHeight = getLineHeight(line)
-            extra = lineHeight - (lineHeight - lineSpacingExtra) / lineSpacingMultiplier
-        } else {
-            extra = lineSpacingExtra
+        val extra = when {
+            lineSpacingMultiplier.compareTo(DEFAULT_LINESPACING_MULTIPLIER) != 0 -> {
+                val lineHeight = getLineHeight(line)
+                lineHeight - (lineHeight - lineSpacingExtra) / lineSpacingMultiplier
+            }
+            else -> lineSpacingExtra
         }
 
         lineBottomWithoutSpacing = (lineBottom - extra).toInt()
@@ -64,9 +64,7 @@ fun Layout.getLineBottomWithoutSpacing(line: Int): Int {
 /**
  * Get the line height of a line.
  */
-fun Layout.getLineHeight(line: Int): Int {
-    return getLineTop(line + 1) - getLineTop(line)
-}
+fun Layout.getLineHeight(line: Int) = getLineTop(line + 1) - getLineTop(line)
 
 /**
  * Returns the top of the Layout after removing the extra padding applied by  the Layout.

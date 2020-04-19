@@ -28,16 +28,15 @@ import androidx.core.graphics.withTranslation
  *
  * See [TextRoundedBgAttributeReader] for supported attributes.
  */
-class RoundedBgTextView : AppCompatTextView {
-
-    private val textRoundedBgHelper: TextRoundedBgHelper
-
-    @JvmOverloads
-    constructor(
+class RoundedBgTextView @JvmOverloads constructor(
         context: Context,
         attrs: AttributeSet? = null,
         defStyleAttr: Int = android.R.attr.textViewStyle
-    ) : super(context, attrs, defStyleAttr) {
+) : AppCompatTextView(context, attrs, defStyleAttr) {
+
+    private val textRoundedBgHelper: TextRoundedBgHelper
+
+    init {
         val attributeReader = TextRoundedBgAttributeReader(context, attrs)
         textRoundedBgHelper = TextRoundedBgHelper(
             horizontalPadding = attributeReader.horizontalPadding,
