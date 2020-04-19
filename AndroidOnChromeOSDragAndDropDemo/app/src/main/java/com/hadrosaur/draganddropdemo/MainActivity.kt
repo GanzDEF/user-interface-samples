@@ -18,7 +18,6 @@ import android.content.ClipData
 import android.content.ClipDescription
 import android.graphics.Color
 import android.os.Bundle
-import android.os.ParcelFileDescriptor
 import android.util.Log
 import android.util.TypedValue
 import android.view.DragEvent
@@ -28,6 +27,7 @@ import android.view.View.*
 import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import kotlinx.android.synthetic.main.activity_main.*
 import java.io.FileInputStream
 import java.io.FileNotFoundException
 
@@ -35,14 +35,14 @@ open class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val dragText = findViewById<TextView>(R.id.text_drag)
-        val targetFrame = findViewById<FrameLayout>(R.id.frame_target)
+//        val dragText = findViewById<TextView>(R.id.text_drag)
+//        val targetFrame = findViewById<FrameLayout>(R.id.frame_target)
 
         //Set up drop target listener.
-        targetFrame.setOnDragListener(DropTargetListener(this))
+        frame_target.setOnDragListener(DropTargetListener(this))
 
         //Set up draggable item listener.
-        dragText.setOnLongClickListener(TextViewLongClickListener())
+        text_drag.setOnLongClickListener(TextViewLongClickListener())
     }
 
     protected inner class DropTargetListener(private val mActivity: AppCompatActivity) : OnDragListener {
@@ -78,51 +78,52 @@ open class MainActivity : AppCompatActivity() {
                     when {
                         event.clipDescription.hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN) -> {
                             //If this is a text item, simply display it in a new TextView.
-                            val frameTarget = v as FrameLayout
-                            frameTarget.removeAllViews()
-                            val droppedText = TextView(mActivity)
-                            val params = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
-                            params.gravity = Gravity.CENTER
-                            droppedText.layoutParams = params
-                            droppedText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30f)
-                            droppedText.text = item.text
-                            frameTarget.addView(droppedText)
+                            with(v as FrameLayout) {
+                                removeAllViews()
+                                addView(TextView(mActivity).apply {
+                                    layoutParams = FrameLayout.LayoutParams(
+                                            FrameLayout.LayoutParams.WRAP_CONTENT,
+                                            FrameLayout.LayoutParams.WRAP_CONTENT
+                                    ).apply {
+                                        gravity = Gravity.CENTER
+                                    }
+                                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 30f)
+                                    text = item.text
+                                })
+                            }
                         }
                         event.clipDescription.hasMimeType("application/x-arc-uri-list") -> {
                             //If a file, read the first 200 characters and output them in a new TextView.
 
                             //Note the use of ContentResolver to resolve the ChromeOS content URI.
-                            val contentUri = item.uri
-                            val parcelFileDescriptor: ParcelFileDescriptor?
-                            parcelFileDescriptor = try {
-                                contentResolver.openFileDescriptor(contentUri, "r")
+                            val parcelFileDescriptor = try {
+                                contentResolver.openFileDescriptor(item.uri, "r")
                             } catch (e: FileNotFoundException) {
                                 e.printStackTrace()
                                 Log.e("DRAGTEST", "File not found.")
                                 return false
                             }
-                            val fileDescriptor = parcelFileDescriptor!!.fileDescriptor
+                            val fileDescriptor = parcelFileDescriptor?.fileDescriptor
                             val size = 5000
                             val bytes = ByteArray(size)
                             try {
-                                val inputStream = FileInputStream(fileDescriptor)
-                                inputStream.use { `in` ->
-                                    `in`.read(bytes, 0, size)
-                                }
-                            } catch (ex: Exception) {
-                            }
+                                FileInputStream(fileDescriptor!!).use { it.read(bytes, 0, size)}
+                            } catch (ex: Exception) { ex.printStackTrace()}
+
                             val contents = String(bytes)
                             val charsToRead = 200
                             val contentLength = if (contents.length > charsToRead) charsToRead else 0
-                            val frameTarget = v as FrameLayout
-                            frameTarget.removeAllViews()
-                            val droppedText = TextView(mActivity)
-                            val params = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
-                            params.gravity = Gravity.CENTER
-                            droppedText.layoutParams = params
-                            droppedText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f)
-                            droppedText.text = contents.substring(0, contentLength)
-                            frameTarget.addView(droppedText)
+                            with(v as FrameLayout) {
+                                removeAllViews()
+                                addView(TextView(mActivity).apply {
+                                    layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
+                                        gravity = Gravity.CENTER
+                                    }
+                                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 30f)
+                                    text = contents.substring(0, contentLength)
+                                })
+                            }
+
                         }
                         else -> return false
                     }
